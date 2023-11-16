@@ -147,7 +147,7 @@ async function run() {
         app.get("/quizdetails/:id", async (req, res) => {
             const id = req.params.id;
             // console.log(id);
-            const query = {_id: new ObjectId(id)};
+            const query = { _id: new ObjectId(id) };
 
             const result = await quizCollections.findOne(query);
             res.send(result);
@@ -158,15 +158,85 @@ async function run() {
             const result = await participateCollections.insertOne(quizResult);
             res.send(result);
         })
+        // Participant GET API
+        app.get("/participantList", async (req, res) => {
+            const result = await participateCollections.find().toArray();
+            res.send(result);
+        })
         // GET Quiz Result by inserted id
         app.get("/quizscore/:insertedid", async (req, res) => {
             const insertedID = req.params.insertedid;
-            const query = {_id: new ObjectId(insertedID)}
+            const query = { _id: new ObjectId(insertedID) }
             const result = await participateCollections.findOne(query);
             res.send(result);
         })
 
-       
+        // Leader board Particular User GET API 
+
+        app.get("/ranking/:userEmail", async (req, res) => {
+            const email = req.params.userEmail;
+            const pipeline = [
+                { $match: { participantEmail: email } },
+                {
+                    $group: {
+                        _id: '$participantEmail',
+                        totalPoints: { $sum: '$points' },
+                        totalCorrectAnswers: { $sum: '$correctAnswers' },
+                        totalQuizResults: { $sum: 1 },
+                    },
+                },
+            ];
+
+            try {
+                const quizResultsSummary = await participateCollections.aggregate(pipeline).toArray();
+                res.send(quizResultsSummary);
+            } catch (error) {
+                console.error(error);
+                res.status(500).send("Internal Server Error");
+            }
+        });
+
+        // Leader board All User GET API 
+        app.get("/leaderboard", async (req, res) => {
+            const pipeline = [
+                {
+                    $group: {
+                        _id: '$participantEmail',
+                        totalPoints: { $sum: '$points' },
+                        totalCorrectAnswers: { $sum: '$correctAnswers' },
+                        totalQuizResults: { $sum: 1 },
+                        name: { $first: '$name' }
+                    },
+                },
+                {
+                    $project: {
+                        _id: 0,
+                        participantEmail: '$_id',
+                        totalPoints: 1,
+                        totalCorrectAnswers: 1,
+                        totalQuizResults: 1,
+                        name: 1
+                    },
+                },
+                {
+                    $sort: { totalPoints: -1 } // Sort by totalPoints in descending order
+                }
+            ];
+        
+            try {
+                const quizResultsSummary = await participateCollections.aggregate(pipeline).toArray();
+                res.send(quizResultsSummary);
+            } catch (error) {
+                console.error(error);
+                res.status(500).send("Internal Server Error");
+            }
+        });
+        
+        
+
+
+
+
 
 
 
