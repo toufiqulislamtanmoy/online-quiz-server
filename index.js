@@ -127,12 +127,21 @@ async function run() {
             res.send(result);
         })
 
+        // Add Quiz
+
+        app.post("/addQuiz",async(req,res)=>{
+            const quizData = req.body;
+            const result = await quizCollections.insertOne(quizData);
+            res.status(200).send(result);
+        })
+
         // QUIZ Collection GET API
 
         app.get("/quiz", async (req, res) => {
-            const result = await quizCollections.find().toArray();
+            const result = await quizCollections.find({ status: true }).toArray();
             res.send(result);
-        })
+        });
+        
         // Single Quiz collection GET API
         app.get("/quizdetails/:id", async (req, res) => {
             const id = req.params.id;
