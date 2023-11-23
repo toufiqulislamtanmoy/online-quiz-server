@@ -1,7 +1,7 @@
 const express = require('express');
+const cors = require('cors');
 const app = express();
 const jwt = require('jsonwebtoken');
-const cors = require('cors');
 require('dotenv').config();
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const port = process.env.PORT || 5000
@@ -58,25 +58,9 @@ async function run() {
 
         })
 
-        // Check Admin Role
-
-        app.get('/users/admin/:email', async (req, res) => {
-            const email = req.params.email;
-
-            // check the requested person is authorized or not
-            if (email !== req.decoded.email) {
-                res.send({ admin: false });
-            }
-            const query = { email: email };
-            const user = await userCollections.findOne(query);
-            const result = { admin: user?.role === 'admin' }
-            res.send(result)
-        })
-
-
         // Verify admin midleware
         const verifyAdmin = async (req, res, next) => {
-            const email = req.decoded.email;
+            const email = req?.decoded?.email;
             const query = { email: email };
             const result = await userCollections.findOne(query);
             if (result?.role !== 'admin') {
@@ -84,6 +68,30 @@ async function run() {
             }
             next();
         }
+
+        // Check Admin Role
+
+        app.get('/users/admin/:email',verifyJWT,verifyAdmin,  async (req, res) => {
+            const email = req.params.email;
+        
+            // check the requested person is authorized or not
+            if (email !== req?.decoded?.email) {
+                // Return after sending the response
+                return res.send({ admin: false });
+            }
+        
+            // Here is the second response
+            const query = { email: email };
+            const user = await userCollections.findOne(query);
+            const result = { admin: user?.role === 'admin' }
+            
+            // Send the response once
+            res.send(result);
+        });
+        
+
+
+        
 
 
         // Verify instructor midleware
@@ -97,24 +105,6 @@ async function run() {
             next();
         }
 
-        app.get("/role/:email", async (req, res) => {
-            const email = req.params.email;
-            const query = { email: email };
-
-            const options = {
-                projection: { role: 1 }
-            };
-
-            const result = await userCollections.findOne(query, options);
-            // if(result !== null){
-            //   const { role } = result; // Extract the role field
-            //   res.send({ role });
-            // }else{
-            //   res.send({})
-            // }
-            res.send(result);
-
-        });
 
 
         // create user
