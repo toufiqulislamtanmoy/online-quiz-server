@@ -141,6 +141,14 @@ async function run() {
             const result = await quizCollections.find({ status: true }).toArray();
             res.send(result);
         });
+
+        // GET Quiz by Email ID
+        app.get("/individualQuiz/:email", async (req, res) => {
+            const email = req.params.email;
+            console.log(email);
+            const result = await quizCollections.find({ assignerEmail: email }).toArray();
+            res.send(result);
+        });
         
         // Single Quiz collection GET API
         app.get("/quizdetails/:id", async (req, res) => {
