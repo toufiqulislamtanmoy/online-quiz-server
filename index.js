@@ -71,27 +71,27 @@ async function run() {
 
         // Check Admin Role
 
-        app.get('/users/admin/:email',verifyJWT,verifyAdmin,  async (req, res) => {
+        app.get('/users/admin/:email', verifyJWT, verifyAdmin, async (req, res) => {
             const email = req.params.email;
-        
+
             // check the requested person is authorized or not
             if (email !== req?.decoded?.email) {
                 // Return after sending the response
                 return res.send({ admin: false });
             }
-        
+
             // Here is the second response
             const query = { email: email };
             const user = await userCollections.findOne(query);
             const result = { admin: user?.role === 'admin' }
-            
+
             // Send the response once
             res.send(result);
         });
-        
 
 
-        
+
+
 
 
         // Verify instructor midleware
@@ -129,7 +129,7 @@ async function run() {
 
         // Add Quiz
 
-        app.post("/addQuiz",async(req,res)=>{
+        app.post("/addQuiz", async (req, res) => {
             const quizData = req.body;
             const result = await quizCollections.insertOne(quizData);
             res.status(200).send(result);
@@ -145,11 +145,10 @@ async function run() {
         // GET Quiz by Email ID
         app.get("/individualQuiz/:email", async (req, res) => {
             const email = req.params.email;
-            console.log(email);
             const result = await quizCollections.find({ assignerEmail: email }).toArray();
             res.send(result);
         });
-        
+
         // Single Quiz collection GET API
         app.get("/quizdetails/:id", async (req, res) => {
             const id = req.params.id;
@@ -176,6 +175,29 @@ async function run() {
             const query = { _id: new ObjectId(insertedID) }
             const result = await participateCollections.findOne(query);
             res.send(result);
+        })
+
+        // Question PATCH APIS
+        app.patch("/addQuestions/:quizId", async (req, res) => {
+            const quizId = req.params.quizId;
+            const newQuestionData = req.body;
+            const existingQuizData = await quizCollections.findOne({ _id:  new ObjectId(quizId) });
+            console.log(existingQuizData);
+
+            if (!existingQuizData) {
+                 res.send({message:"Not Found"})
+            }
+
+            const updatedQuestions = [...existingQuizData.questions, newQuestionData];
+
+            const updatedQuizData = {
+                ...existingQuizData,
+                questions: updatedQuestions,
+            };
+
+           const result = await quizzesCollection.updateOne({ _id:  new ObjectId(quizId) }, { $set: updatedQuizData });
+
+             res.send(result);
         })
 
         // Leader board Particular User GET API 
@@ -229,7 +251,7 @@ async function run() {
                     $sort: { totalPoints: -1 } // Sort by totalPoints in descending order
                 }
             ];
-        
+
             try {
                 const quizResultsSummary = await participateCollections.aggregate(pipeline).toArray();
                 res.send(quizResultsSummary);
@@ -238,8 +260,8 @@ async function run() {
                 res.status(500).send("Internal Server Error");
             }
         });
-        
-        
+
+
 
 
 
