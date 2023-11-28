@@ -1,11 +1,11 @@
 const express = require('express');
 const cors = require('cors');
 const app = express();
+app.use(cors());
 const jwt = require('jsonwebtoken');
 require('dotenv').config();
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const port = process.env.PORT || 5000
-app.use(cors());
 app.use(express.json());
 
 const verifyJWT = (req, res, next) => {
@@ -178,24 +178,23 @@ async function run() {
         })
 
         // Question PATCH APIS
-        app.patch("/addQuestions/:quizId", async (req, res) => {
+        app.patch("/addQuestions/:quizId", verifyJWT, verifyAdmin,async (req, res) => {
             const quizId = req.params.quizId;
             const newQuestionData = req.body;
             const existingQuizData = await quizCollections.findOne({ _id:  new ObjectId(quizId) });
-            console.log(existingQuizData);
-
+            
             if (!existingQuizData) {
-                 res.send({message:"Not Found"})
+                res.send({message:"Not Found"})
             }
-
+            
             const updatedQuestions = [...existingQuizData.questions, newQuestionData];
+            console.log(updatedQuestions);
 
             const updatedQuizData = {
-                ...existingQuizData,
                 questions: updatedQuestions,
             };
 
-           const result = await quizzesCollection.updateOne({ _id:  new ObjectId(quizId) }, { $set: updatedQuizData });
+           const result = await quizCollections.updateOne({ _id:  new ObjectId(quizId) }, { $set: updatedQuizData });
 
              res.send(result);
         })
