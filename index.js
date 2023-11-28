@@ -178,26 +178,99 @@ async function run() {
         })
 
         // Question PATCH APIS
-        app.patch("/addQuestions/:quizId", verifyJWT, verifyAdmin,async (req, res) => {
+        app.patch("/addQuestions/:quizId", verifyJWT, verifyAdmin, async (req, res) => {
             const quizId = req.params.quizId;
             const newQuestionData = req.body;
-            const existingQuizData = await quizCollections.findOne({ _id:  new ObjectId(quizId) });
-            
-            if (!existingQuizData) {
-                res.send({message:"Not Found"})
+
+            const result = await quizCollections.updateOne(
+                { _id: new ObjectId(quizId) },
+                { $push: { questions: newQuestionData } }
+            );
+
+            res.send(result);
+        });
+
+
+        // Question Delete API
+        app.patch("/deleteQuestion/:quizId", verifyJWT, verifyAdmin, async (req, res) => {
+            const quizId = req.params.quizId;
+            const { deletedQuestion } = req.body;
+
+            try {
+                const existingQuizData = await quizCollections.findOne({ _id: new ObjectId(quizId) });
+
+                if (!existingQuizData) {
+                    return res.status(404).json({ message: "Quiz not found" });
+                }
+
+                // Filter out the deleted question based on its properties
+                const updatedQuestions = existingQuizData.questions.filter(
+                    (question) => JSON.stringify(question) !== JSON.stringify(deletedQuestion)
+                );
+
+                const updatedQuizData = {
+                    questions: updatedQuestions,
+                };
+
+                const result = await quizCollections.updateOne(
+                    { _id: new ObjectId(quizId) },
+                    { $set: updatedQuizData }
+                );
+
+                res.json(result);
+            } catch (error) {
+                console.error("Error deleting question:", error);
+                res.status(500).json({ message: "Internal Server Error" });
             }
-            
-            const updatedQuestions = [...existingQuizData.questions, newQuestionData];
-            console.log(updatedQuestions);
+        });
 
-            const updatedQuizData = {
-                questions: updatedQuestions,
-            };
 
-           const result = await quizCollections.updateOne({ _id:  new ObjectId(quizId) }, { $set: updatedQuizData });
+        // Quiz Delete API
+        app.delete("/deleteQuiz/:quizId", async (req, res) => {
+            const quizId = req.params.quizId;
 
-             res.send(result);
-        })
+            try {
+                // Perform the deletion operation based on the quizId
+                const result = await quizCollections.deleteOne({ _id: new ObjectId(quizId) });
+
+                if (result.deletedCount === 1) {
+                    res.status(200).json({ message: "Quiz deleted successfully" });
+                } else {
+                    res.status(404).json({ message: "Quiz not found" });
+                }
+            } catch (error) {
+                console.error("Error deleting quiz:", error);
+                res.status(500).json({ message: "Internal Server Error" });
+            }
+        });
+
+        // Assuming you're using Express.js
+        app.patch("/publishQuiz/:quizId", async (req, res) => {
+            const quizId = req.params.quizId;
+            const currentStatus = req.body.currentStatus;
+
+            try {
+                // Toggle the quiz status
+                const result = await quizCollections.updateOne(
+                    { _id: new ObjectId(quizId) },
+                    { $set: { status: !currentStatus } }
+                );
+
+                if (result.modifiedCount === 1) {
+                    res.status(200).json({ message: "Quiz status toggled successfully" });
+                } else {
+                    res.status(404).json({ message: "Quiz not found" });
+                }
+            } catch (error) {
+                console.error("Error toggling quiz status:", error);
+                res.status(500).json({ message: "Internal Server Error" });
+            }
+        });
+
+
+
+
+
 
         // Leader board Particular User GET API 
 
