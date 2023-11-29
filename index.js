@@ -132,7 +132,8 @@ async function run() {
         app.post("/addQuiz", async (req, res) => {
             const quizData = req.body;
             const result = await quizCollections.insertOne(quizData);
-            res.status(200).send(result);
+            console.log(result);
+            res.send(result);
         })
 
         // QUIZ Collection GET API
@@ -178,7 +179,7 @@ async function run() {
         })
 
         // Question PATCH APIS
-        app.patch("/addQuestions/:quizId", verifyJWT, verifyAdmin, async (req, res) => {
+        app.patch("/addQuestions/:quizId",  async (req, res) => {
             const quizId = req.params.quizId;
             const newQuestionData = req.body;
 
@@ -192,7 +193,7 @@ async function run() {
 
 
         // Question Delete API
-        app.patch("/deleteQuestion/:quizId", verifyJWT, verifyAdmin, async (req, res) => {
+        app.patch("/deleteQuestion/:quizId", async (req, res) => {
             const quizId = req.params.quizId;
             const { deletedQuestion } = req.body;
 
