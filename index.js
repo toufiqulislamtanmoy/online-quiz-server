@@ -120,6 +120,19 @@ async function run() {
         })
 
 
+        app.get('/role/:email', async (req, res) => {
+            const email = req.params.email;
+            // console.log(email);
+            const query = { email: email }
+            const options = {
+              projection: { role: 1 },
+            };
+            const result = await userCollections.findOne(query, options);
+            res.send(result);
+      
+          })
+
+
 
         /*********************  This all are the user api  start***************/
         app.get("/users", async (req, res) => {
